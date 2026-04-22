@@ -1,0 +1,75 @@
+name: ramen-ui
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ramen-ui/**"
+      - ".github/workflows/ramen-ui.yml"
+
+env:
+  IMAGE_NAME: ghcr.io/therealdavidbour/ramen-ui
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ramen-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: ramen-ui/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ramen-ui
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          build-args: |
+            VITE_RECIPE_API_URL=http://recipe-api.10-0-0-200.nip.io
+            VITE_ORDERS_API_URL=http://orders-api.10-0-0-200.nip.io
+
+  update-config:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout initech-config
+        uses: actions/checkout@v4
+        with:
+          repository: therealdavidbour/Initech-config
+          token: ${{ secrets.CONFIG_REPO_PAT }}
+          path: initech-config
+
+      - name: Update image tag
+        run: |
+          cd initech-config
+          sed -i "s|image: ghcr.io/therealdavidbour/ramen-ui:.*|image: ghcr.io/therealdavidbour/ramen-ui:${{ github.sha }}|" \
+            environments/dev/ramen-ui/deployment.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add environments/dev/ramen-ui/deployment.yaml
+          git diff --cached --quiet || git commit -m "ci: update ramen-ui image to ${{ github.sha }}"
+          git push

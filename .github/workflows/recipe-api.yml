@@ -1,0 +1,70 @@
+name: recipe-api
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "recipe-api/**"
+      - ".github/workflows/recipe-api.yml"
+
+env:
+  IMAGE_NAME: ghcr.io/therealdavidbour/recipe-api
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: recipe-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest tests/ -v
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./recipe-api
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+  update-config:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout initech-config
+        uses: actions/checkout@v4
+        with:
+          repository: therealdavidbour/Initech-config
+          token: ${{ secrets.CONFIG_REPO_PAT }}
+          path: initech-config
+
+      - name: Update image tag
+        run: |
+          cd initech-config
+          sed -i "s|image: ghcr.io/therealdavidbour/recipe-api:.*|image: ghcr.io/therealdavidbour/recipe-api:${{ github.sha }}|" \
+            environments/dev/recipe-api/deployment.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add environments/dev/recipe-api/deployment.yaml
+          git diff --cached --quiet || git commit -m "ci: update recipe-api image to ${{ github.sha }}"
+          git push
