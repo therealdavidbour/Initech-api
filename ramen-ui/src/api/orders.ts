@@ -1,6 +1,6 @@
 import type { BowlConfig, Order } from "../types";
 
-const BASE = import.meta.env.VITE_ORDERS_API_URL ?? "http://orders-api.10-0-0-200.nip.io";
+const BASE = import.meta.env.VITE_ORDERS_API_URL ?? "https://orders-api.10-0-0-200.nip.io";
 
 export const listOrders = (): Promise<Order[]> =>
   fetch(`${BASE}/orders`).then((r) => r.json());

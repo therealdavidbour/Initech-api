@@ -1,6 +1,6 @@
 import type { Ingredient, RandomBowl } from "../types";
 
-const BASE = import.meta.env.VITE_RECIPE_API_URL ?? "http://recipe-api.10-0-0-200.nip.io";
+const BASE = import.meta.env.VITE_RECIPE_API_URL ?? "https://recipe-api.10-0-0-200.nip.io";
 
 export const getBroths = (): Promise<Ingredient[]> =>
   fetch(`${BASE}/broths`).then((r) => r.json());

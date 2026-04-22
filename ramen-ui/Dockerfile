@@ -7,8 +7,8 @@ RUN npm install
 
 COPY . .
 
-ARG VITE_RECIPE_API_URL=http://recipe-api.10-0-0-200.nip.io
-ARG VITE_ORDERS_API_URL=http://orders-api.10-0-0-200.nip.io
+ARG VITE_RECIPE_API_URL=https://recipe-api.10-0-0-200.nip.io
+ARG VITE_ORDERS_API_URL=https://orders-api.10-0-0-200.nip.io
 
 ENV VITE_RECIPE_API_URL=$VITE_RECIPE_API_URL
 ENV VITE_ORDERS_API_URL=$VITE_ORDERS_API_URL

@@ -47,8 +47,8 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME }}:${{ github.sha }}
           build-args: |
-            VITE_RECIPE_API_URL=http://recipe-api.10-0-0-200.nip.io
-            VITE_ORDERS_API_URL=http://orders-api.10-0-0-200.nip.io
+            VITE_RECIPE_API_URL=https://recipe-api.10-0-0-200.nip.io
+            VITE_ORDERS_API_URL=https://orders-api.10-0-0-200.nip.io
 
   update-config:
     needs: build-and-push
